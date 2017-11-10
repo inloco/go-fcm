@@ -35,6 +35,27 @@ var (
 	fcmServerUrl = fcm_server_url
 )
 
+// Interface for instantiating and interacting with an FcmClient
+type FcmClienty interface {
+	NewFcmClient(string) FcmClienty
+
+	NewFcmTopicMsg(string, map[string]string) FcmClienty
+	NewFcmMsgTo(string, interface{}) FcmClienty
+	SetMsgData(interface{}) FcmClienty
+	NewFcmRegIdsMsg([]string, interface{}) FcmClienty
+	AppendDevices([]string) FcmClienty
+	Send() (*FcmResponseStatus, error)
+	SetPriority(p string) FcmClienty
+	SetCollapseKey(val string) FcmClienty
+	SetNotificationPayload(payload *NotificationPayload) FcmClienty
+	SetContentAvailable(isContentAvailable bool) FcmClienty
+	SetDelayWhileIdle(isDelayWhileIdle bool) FcmClienty
+	SetTimeToLive(ttl int) FcmClienty
+	SetRestrictedPackageName(pkg string) FcmClienty
+	SetDryRun(drun bool) FcmClienty
+	SetCondition(condition string) FcmClienty
+}
+
 // FcmClient stores the key and the Message (FcmMsg)
 type FcmClient struct {
 	ApiKey  string
@@ -88,7 +109,7 @@ type NotificationPayload struct {
 	AndroidChannelID string `json:"android_channel_id,omitempty"`
 }
 
-// NewFcmClient init and create fcm client
+// NewFcmClient inits and creates fcm client using exported interface
 func NewFcmClient(apiKey string) *FcmClient {
 	fcmc := new(FcmClient)
 	fcmc.ApiKey = apiKey
@@ -96,8 +117,13 @@ func NewFcmClient(apiKey string) *FcmClient {
 	return fcmc
 }
 
+// NewFcmClient init and create fcm client
+func (this *FcmClient) NewFcmClient(apiKey string) FcmClienty {
+	return NewFcmClient(apiKey)
+}
+
 // NewFcmTopicMsg sets the targeted token/topic and the data payload
-func (this *FcmClient) NewFcmTopicMsg(to string, body map[string]string) *FcmClient {
+func (this *FcmClient) NewFcmTopicMsg(to string, body map[string]string) FcmClienty {
 
 	this.NewFcmMsgTo(to, body)
 
@@ -105,7 +131,7 @@ func (this *FcmClient) NewFcmTopicMsg(to string, body map[string]string) *FcmCli
 }
 
 // NewFcmMsgTo sets the targeted token/topic and the data payload
-func (this *FcmClient) NewFcmMsgTo(to string, body interface{}) *FcmClient {
+func (this *FcmClient) NewFcmMsgTo(to string, body interface{}) FcmClienty {
 	this.Message.To = to
 	this.Message.Data = body
 
@@ -113,7 +139,7 @@ func (this *FcmClient) NewFcmMsgTo(to string, body interface{}) *FcmClient {
 }
 
 // SetMsgData sets data payload
-func (this *FcmClient) SetMsgData(body interface{}) *FcmClient {
+func (this *FcmClient) SetMsgData(body interface{}) FcmClienty {
 
 	this.Message.Data = body
 
@@ -122,7 +148,7 @@ func (this *FcmClient) SetMsgData(body interface{}) *FcmClient {
 }
 
 // NewFcmRegIdsMsg gets a list of devices with data payload
-func (this *FcmClient) NewFcmRegIdsMsg(list []string, body interface{}) *FcmClient {
+func (this *FcmClient) NewFcmRegIdsMsg(list []string, body interface{}) FcmClienty {
 	this.newDevicesList(list)
 	this.Message.Data = body
 
@@ -131,7 +157,7 @@ func (this *FcmClient) NewFcmRegIdsMsg(list []string, body interface{}) *FcmClie
 }
 
 // newDevicesList init the devices list
-func (this *FcmClient) newDevicesList(list []string) *FcmClient {
+func (this *FcmClient) newDevicesList(list []string) FcmClienty {
 	this.Message.RegistrationIds = make([]string, len(list))
 	copy(this.Message.RegistrationIds, list)
 
@@ -140,7 +166,7 @@ func (this *FcmClient) newDevicesList(list []string) *FcmClient {
 }
 
 // AppendDevices adds more devices/tokens to the Fcm request
-func (this *FcmClient) AppendDevices(list []string) *FcmClient {
+func (this *FcmClient) AppendDevices(list []string) FcmClienty {
 
 	this.Message.RegistrationIds = append(this.Message.RegistrationIds, list...)
 
@@ -221,7 +247,7 @@ func (this *FcmResponseStatus) parseStatusBody(body []byte) error {
 
 // SetPriority Sets the priority of the message.
 // Priority_HIGH or Priority_NORMAL
-func (this *FcmClient) SetPriority(p string) *FcmClient {
+func (this *FcmClient) SetPriority(p string) FcmClienty {
 
 	if p == Priority_HIGH {
 		this.Message.Priority = Priority_HIGH
@@ -237,7 +263,7 @@ func (this *FcmClient) SetPriority(p string) *FcmClient {
 // so that only the last message gets sent when delivery can be resumed.
 // This is intended to avoid sending too many of the same messages when the
 // device comes back online or becomes active (see delay_while_idle).
-func (this *FcmClient) SetCollapseKey(val string) *FcmClient {
+func (this *FcmClient) SetCollapseKey(val string) FcmClienty {
 
 	this.Message.CollapseKey = val
 
@@ -246,7 +272,7 @@ func (this *FcmClient) SetCollapseKey(val string) *FcmClient {
 
 // SetNotificationPayload sets the notification payload based on the specs
 // https://firebase.google.com/docs/cloud-messaging/http-server-ref
-func (this *FcmClient) SetNotificationPayload(payload *NotificationPayload) *FcmClient {
+func (this *FcmClient) SetNotificationPayload(payload *NotificationPayload) FcmClienty {
 
 	this.Message.Notification = *payload
 
@@ -257,7 +283,7 @@ func (this *FcmClient) SetNotificationPayload(payload *NotificationPayload) *Fcm
 // in the APNS payload. When a notification or message is sent and this is set
 // to true, an inactive client app is awoken. On Android, data messages wake
 // the app by default. On Chrome, currently not supported.
-func (this *FcmClient) SetContentAvailable(isContentAvailable bool) *FcmClient {
+func (this *FcmClient) SetContentAvailable(isContentAvailable bool) FcmClienty {
 
 	this.Message.ContentAvailable = isContentAvailable
 
@@ -267,7 +293,7 @@ func (this *FcmClient) SetContentAvailable(isContentAvailable bool) *FcmClient {
 // SetDelayWhileIdle When this parameter is set to true, it indicates that
 // the message should not be sent until the device becomes active.
 // The default value is false.
-func (this *FcmClient) SetDelayWhileIdle(isDelayWhileIdle bool) *FcmClient {
+func (this *FcmClient) SetDelayWhileIdle(isDelayWhileIdle bool) FcmClienty {
 
 	this.Message.DelayWhileIdle = isDelayWhileIdle
 
@@ -279,7 +305,7 @@ func (this *FcmClient) SetDelayWhileIdle(isDelayWhileIdle bool) *FcmClient {
 // to live supported is 4 weeks, and the default value is 4 weeks.
 // For more information, see
 // https://firebase.google.com/docs/cloud-messaging/concept-options#ttl
-func (this *FcmClient) SetTimeToLive(ttl int) *FcmClient {
+func (this *FcmClient) SetTimeToLive(ttl int) FcmClienty {
 
 	if ttl > MAX_TTL {
 
@@ -296,7 +322,7 @@ func (this *FcmClient) SetTimeToLive(ttl int) *FcmClient {
 // SetRestrictedPackageName This parameter specifies the package name of the
 // application where the registration tokens must match in order to
 // receive the message.
-func (this *FcmClient) SetRestrictedPackageName(pkg string) *FcmClient {
+func (this *FcmClient) SetRestrictedPackageName(pkg string) FcmClienty {
 
 	this.Message.RestrictedPackageName = pkg
 
@@ -306,7 +332,7 @@ func (this *FcmClient) SetRestrictedPackageName(pkg string) *FcmClient {
 // SetDryRun This parameter, when set to true, allows developers to test
 // a request without actually sending a message.
 // The default value is false
-func (this *FcmClient) SetDryRun(drun bool) *FcmClient {
+func (this *FcmClient) SetDryRun(drun bool) FcmClienty {
 
 	this.Message.DryRun = drun
 
@@ -355,7 +381,7 @@ func (this *FcmResponseStatus) GetRetryAfterTime() (t time.Duration, e error) {
 }
 
 // SetCondition to set a logical expression of conditions that determine the message target
-func (this *FcmClient) SetCondition(condition string) *FcmClient {
+func (this *FcmClient) SetCondition(condition string) FcmClienty {
 	this.Message.Condition = condition
 	return this
-}
+} 
