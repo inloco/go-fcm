@@ -192,7 +192,15 @@ func (this *FcmClient) sendOnce() (*FcmResponseStatus, error) {
 	request.Header.Set("Authorization", this.apiKeyHeader())
 	request.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
+	client := &http.Client{
+		Timeout: 1 * time.Second,
+		Transport: &http.Transport{
+			IdleConnTimeout:     1 * time.Minute,
+			MaxIdleConnsPerHost: 500,
+			MaxIdleConns:        0,
+			MaxConnsPerHost:     0,
+		},
+	}
 	response, err := client.Do(request)
 
 	if err != nil {
@@ -384,4 +392,4 @@ func (this *FcmResponseStatus) GetRetryAfterTime() (t time.Duration, e error) {
 func (this *FcmClient) SetCondition(condition string) FcmClienty {
 	this.Message.Condition = condition
 	return this
-} 
+}
