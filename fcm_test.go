@@ -13,7 +13,7 @@ func TestTopicHandle_1(t *testing.T) {
 	chgUrl(srv)
 	defer srv.Close()
 
-	c := NewFcmClient("key")
+	c := NewFcmClient("key", &http.Client{})
 
 	data := map[string]string{
 		"msg": "Hello World",
@@ -37,7 +37,7 @@ func TestTopicHandle_2(t *testing.T) {
 	chgUrl(srv)
 	defer srv.Close()
 
-	c := NewFcmClient("key")
+	c := NewFcmClient("key", &http.Client{})
 
 	data := map[string]string{
 		"msg": "Hello World",
@@ -61,7 +61,7 @@ func TestTopicHandle_3(t *testing.T) {
 	chgUrl(srv)
 	defer srv.Close()
 
-	c := NewFcmClient("key")
+	c := NewFcmClient("key", &http.Client{})
 
 	data := map[string]string{
 		"msg": "Hello World",
@@ -90,7 +90,7 @@ func TestRegIdHandle_1(t *testing.T) {
 	chgUrl(srv)
 	defer srv.Close()
 
-	c := NewFcmClient("key")
+	c := NewFcmClient("key", &http.Client{})
 
 	data := map[string]string{
 		"msg": "Hello World",
@@ -124,7 +124,7 @@ func TestRegIdHandle_2(t *testing.T) {
 	chgUrl(srv)
 	defer srv.Close()
 
-	c := NewFcmClient("key")
+	c := NewFcmClient("key", &http.Client{})
 
 	data := map[string]string{
 		"msg": "Hello World",
