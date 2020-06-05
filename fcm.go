@@ -37,7 +37,7 @@ var (
 
 // Interface for instantiating and interacting with an FcmClient
 type FcmClienty interface {
-	NewFcmClient(string) FcmClienty
+	NewFcmClient(string, *http.Client) FcmClienty
 
 	NewFcmTopicMsg(string, map[string]string) FcmClienty
 	NewFcmMsgTo(string, interface{}) FcmClienty
@@ -59,6 +59,7 @@ type FcmClienty interface {
 // FcmClient stores the key and the Message (FcmMsg)
 type FcmClient struct {
 	ApiKey  string
+	Client  *http.Client
 	Message FcmMsg
 }
 
@@ -110,16 +111,17 @@ type NotificationPayload struct {
 }
 
 // NewFcmClient inits and creates fcm client using exported interface
-func NewFcmClient(apiKey string) *FcmClient {
+func NewFcmClient(apiKey string, client *http.Client) *FcmClient {
 	fcmc := new(FcmClient)
 	fcmc.ApiKey = apiKey
+	fcmc.Client = client
 
 	return fcmc
 }
 
 // NewFcmClient init and create fcm client
-func (this *FcmClient) NewFcmClient(apiKey string) FcmClienty {
-	return NewFcmClient(apiKey)
+func (this *FcmClient) NewFcmClient(apiKey string, client *http.Client) FcmClienty {
+	return NewFcmClient(apiKey, client)
 }
 
 // NewFcmTopicMsg sets the targeted token/topic and the data payload
@@ -192,8 +194,7 @@ func (this *FcmClient) sendOnce() (*FcmResponseStatus, error) {
 	request.Header.Set("Authorization", this.apiKeyHeader())
 	request.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
-	response, err := client.Do(request)
+	response, err := this.Client.Do(request)
 
 	if err != nil {
 		return fcmRespStatus, err
@@ -384,4 +385,4 @@ func (this *FcmResponseStatus) GetRetryAfterTime() (t time.Duration, e error) {
 func (this *FcmClient) SetCondition(condition string) FcmClienty {
 	this.Message.Condition = condition
 	return this
-} 
+}
